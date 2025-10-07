@@ -7,11 +7,9 @@ import * as React from "react";
 import { type z } from "zod";
 
 import { api } from "@/trpc/react";
-import { type AppRouter } from "@/server/api/root";
+import { type RouterInputs } from "@/server/api/root";
 
-type VoteSubmissionInput = z.infer<
-  AppRouter["voteSubmission"]["submit"]["_def"]["_input_"]
->;
+type VoteSubmissionInput = RouterInputs["voteSubmission"]["submit"];
 
 function VoteSubmissionForm() {
   const router = useRouter();
