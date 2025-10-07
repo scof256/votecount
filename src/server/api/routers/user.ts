@@ -1,6 +1,12 @@
 import { TRPCError } from "@trpc/server";
+import { z } from "zod";
+import { Role } from "@prisma/client";
 
-import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  adminProcedure,
+} from "@/server/api/trpc";
 
 export const userRouter = createTRPCRouter({
   me: protectedProcedure.query(async ({ ctx }) => {
@@ -31,4 +37,32 @@ export const userRouter = createTRPCRouter({
 
     return user;
   }),
+
+  getAll: adminProcedure.query(({ ctx }) => {
+    return ctx.db.user.findMany({
+      orderBy: { name: "asc" },
+      include: {
+        assignedPollingStation: true,
+      },
+    });
+  }),
+
+  updateUser: adminProcedure
+    .input(
+      z.object({
+        userId: z.string(),
+        role: z.nativeEnum(Role),
+        assignedPollingStationId: z.string().nullable(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { userId, role, assignedPollingStationId } = input;
+      return ctx.db.user.update({
+        where: { id: userId },
+        data: {
+          role,
+          assignedPollingStationId,
+        },
+      });
+    }),
 });
