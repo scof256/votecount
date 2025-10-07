@@ -130,8 +130,8 @@ export const voteSubmissionRouter = createTRPCRouter({
       });
     }),
 
-  getResults: publicProcedure.query(({ ctx }) => {
-    return ctx.db.candidateVote.groupBy({
+  getResults: publicProcedure.query(async ({ ctx }) => {
+    const results = await ctx.db.candidateVote.groupBy({
       by: ["candidateId"],
       where: {
         submission: {
@@ -147,5 +147,24 @@ export const voteSubmissionRouter = createTRPCRouter({
         },
       },
     });
+
+    // For each result, fetch the full candidate details
+    const hydratedResults = await Promise.all(
+      results.map(async (result) => {
+        const candidate = await ctx.db.candidate.findUnique({
+          where: { id: result.candidateId },
+          select: { name: true, politicalParty: true },
+        });
+        return {
+          ...result,
+          candidate: candidate ?? {
+            name: "Unknown",
+            politicalParty: "N/A",
+          },
+        };
+      }),
+    );
+
+    return hydratedResults;
   }),
 });

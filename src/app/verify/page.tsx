@@ -50,6 +50,9 @@ function VerificationDashboard() {
               Status
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+              Details
+            </th>
+            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
               Actions
             </th>
           </tr>
@@ -75,6 +78,14 @@ function VerificationDashboard() {
                 >
                   {s.status}
                 </span>
+              </td>
+              <td className="whitespace-nowrap px-6 py-4 text-sm font-medium">
+                <Link
+                  href={`/verify/${s.id}`}
+                  className="text-indigo-600 hover:text-indigo-900"
+                >
+                  View Details
+                </Link>
               </td>
               <td className="whitespace-nowrap px-6 py-4 text-sm font-medium">
                 <button

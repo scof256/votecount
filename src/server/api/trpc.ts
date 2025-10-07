@@ -24,9 +24,49 @@ import { db } from "@/server/db";
  * @see https://trpc.io/docs/server/context
  */
 export const createTRPCContext = (req: NextRequest) => {
+  const auth = getAuth(req);
+  const userId = auth.userId ?? "SYSTEM"; // Use "SYSTEM" for unauthenticated actions
+
+  // Extend the Prisma client with audit logging middleware for this specific request
+  const dbWithAudit = db.$extends({
+    query: {
+      $allModels: {
+        async $allOperations({ model, operation, args, query }) {
+          // We only care about mutations (writes)
+          if (
+            !model ||
+            !["update", "updateMany", "delete", "deleteMany", "create", "createMany"].includes(operation)
+          ) {
+            return query(args);
+          }
+
+          // We only audit specific models
+          const modelsToAudit = ["VoteSubmission", "CandidateVote", "User", "Election"];
+          if (!modelsToAudit.includes(model)) {
+            return query(args);
+          }
+
+          // Using a transaction ensures that the audit log is only created if the original operation succeeds.
+          const [, result] = await db.$transaction([
+            db.auditLog.create({
+              data: {
+                userId: userId,
+                action: `${operation}:${model}`,
+                details: args, // Log the arguments of the operation
+              },
+            }),
+            query(args),
+          ]);
+
+          return result;
+        },
+      },
+    },
+  });
+
   return {
-    auth: getAuth(req),
-    db,
+    auth,
+    db: dbWithAudit,
   };
 };
 
