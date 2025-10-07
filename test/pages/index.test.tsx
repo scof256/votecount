@@ -1,19 +1,28 @@
 import { render, screen } from "@testing-library/react";
-import { useSession } from "next-auth/react";
+import { useUser } from "@clerk/nextjs";
 import * as React from "react";
 
 import HomePage from "@/app/page";
 import { api } from "@/trpc/react";
 
-jest.mock("next-auth/react");
+// Mock Clerk's hooks and components
+jest.mock("@clerk/nextjs", () => ({
+  useUser: jest.fn(),
+  SignInButton: ({ children }: { children: React.ReactNode }) => (
+    <>{children}</>
+  ),
+  UserButton: () => <div>UserButton</div>, // Simple mock for UserButton
+}));
+
 jest.mock("@/trpc/react");
 
 describe("HomePage", () => {
   it("renders the page for unauthenticated users", () => {
     // Arrange
-    (useSession as jest.Mock).mockReturnValue({
-      data: null,
-      status: "unauthenticated",
+    (useUser as jest.Mock).mockReturnValue({
+      isLoaded: true,
+      isSignedIn: false,
+      user: null,
     });
     const mockUseQuery = jest.fn().mockReturnValue({
       data: null,
@@ -35,20 +44,23 @@ describe("HomePage", () => {
     ).toBeInTheDocument();
     expect(screen.getByText(/You are not signed in./i)).toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: /Sign In/i })
+      screen.getByRole("button", { name: /Sign In/i })
     ).toBeInTheDocument();
   });
 
   it("renders the page for authenticated users", () => {
     // Arrange
-    (useSession as jest.Mock).mockReturnValue({
-      data: {
-        user: {
-          email: "test@example.com",
-          role: "admin",
+    (useUser as jest.Mock).mockReturnValue({
+      isLoaded: true,
+      isSignedIn: true,
+      user: {
+        primaryEmailAddress: {
+          emailAddress: "test@example.com",
+        },
+        publicMetadata: {
+          role: "ADMINISTRATOR",
         },
       },
-      status: "authenticated",
     });
     const mockUseQuery = jest.fn().mockReturnValue({
       data: { greeting: "Hello from tRPC" },
@@ -68,21 +80,11 @@ describe("HomePage", () => {
     expect(
       screen.getByRole("heading", { name: /Vote Tallying Application/i })
     ).toBeInTheDocument();
-    expect(
-      screen.getByText((content, node) => {
-        const textContent = node?.textContent?.replace(/\s+/g, " ").trim();
-        return textContent === "Signed in as test@example.com";
-      })
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText((content, node) => {
-        const textContent = node?.textContent?.replace(/\s+/g, " ").trim();
-        return textContent === "Your role is: admin";
-      })
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /Sign Out/i })
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Signed in as/i)).toBeInTheDocument();
+    expect(screen.getByText(/test@example.com/i)).toBeInTheDocument();
+    expect(screen.getByText(/Your role is/i)).toBeInTheDocument();
+    expect(screen.getByText(/ADMINISTRATOR/i)).toBeInTheDocument();
+    expect(screen.getByText(/UserButton/i)).toBeInTheDocument(); // Check for the mocked UserButton
     expect(screen.getByText(/Hello from tRPC/i)).toBeInTheDocument();
   });
 });

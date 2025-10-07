@@ -6,12 +6,12 @@
  * TL;DR - This is where all the tRPC server stuff is created and plugged in. The pieces you will
  * need to use are documented accordingly near the end.
  */
-
+import { getAuth } from "@clerk/nextjs/server";
 import { initTRPC, TRPCError } from "@trpc/server";
+import { type FetchCreateContextFnOptions } from "@trpc/server/adapters/fetch";
 import superjson from "superjson";
 import { ZodError } from "zod";
 
-import { getServerAuthSession } from "@/server/auth";
 import { db } from "@/server/db";
 
 /**
@@ -20,23 +20,15 @@ import { db } from "@/server/db";
  * This section defines the "contexts" that are available in the backend API.
  *
  * These allow you to access things when processing a request, like the database, the session, etc.
+ *
+ * @see https://trpc.io/docs/server/context
  */
-export const createInnerTRPCContext = async () => {
-  const session = await getServerAuthSession();
+export const createTRPCContext = (opts: FetchCreateContextFnOptions) => {
+  const { req } = opts;
   return {
-    session,
+    auth: getAuth(req),
     db,
   };
-};
-
-/**
- * This is the actual context you will use in your router. It will be used to process every request
- * that goes through your tRPC endpoint.
- *
- * @see https://trpc.io/docs/context
- */
-export const createTRPCContext = async () => {
-  return await createInnerTRPCContext();
 };
 
 /**
@@ -46,7 +38,7 @@ export const createTRPCContext = async () => {
  * ZodErrors so that you get typesafety on the frontend if your procedure fails due to validation
  * errors on the backend.
  */
-const t = initTRPC.context<Awaited<ReturnType<typeof createTRPCContext>>>().create({
+const t = initTRPC.context<typeof createTRPCContext>().create({
   transformer: superjson,
   errorFormatter({ shape, error }) {
     return {
@@ -87,13 +79,13 @@ export const publicProcedure = t.procedure;
  * Reusable middleware that enforces users are logged in before running the procedure.
  */
 const enforceUserIsAuthed = t.middleware(({ ctx, next }) => {
-  if (!ctx.session?.user) {
+  if (!ctx.auth.userId) {
     throw new TRPCError({ code: "UNAUTHORIZED" });
   }
   return next({
     ctx: {
-      // infers the `session` as non-nullable
-      session: { ...ctx.session, user: ctx.session.user },
+      // infers the `auth` as non-nullable
+      auth: ctx.auth,
     },
   });
 });
@@ -110,19 +102,16 @@ export const protectedProcedure = t.procedure.use(enforceUserIsAuthed);
 
 /**
  * Middleware for checking if a user has the 'ADMINISTRATOR' role.
+ * Clerk stores custom claims in public/private metadata. We'll use publicMetadata.
  */
 const enforceUserIsAdmin = t.middleware(({ ctx, next }) => {
-  if (!ctx.session?.user) {
-    throw new TRPCError({ code: "UNAUTHORIZED" });
-  }
-
-  if (ctx.session.user.role !== "ADMINISTRATOR") {
+  if (ctx.auth.sessionClaims?.metadata?.role !== "ADMINISTRATOR") {
     throw new TRPCError({ code: "FORBIDDEN" });
   }
 
   return next({
     ctx: {
-      session: { ...ctx.session, user: ctx.session.user },
+      auth: ctx.auth,
     },
   });
 });
@@ -135,4 +124,6 @@ const enforceUserIsAdmin = t.middleware(({ ctx, next }) => {
  *
  * @see https://trpc.io/docs/procedures
  */
-export const adminProcedure = t.procedure.use(enforceUserIsAuthed).use(enforceUserIsAdmin);
+export const adminProcedure = t.procedure
+  .use(enforceUserIsAuthed)
+  .use(enforceUserIsAdmin);
