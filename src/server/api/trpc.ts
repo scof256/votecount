@@ -8,7 +8,7 @@
  */
 import { getAuth } from "@clerk/nextjs/server";
 import { initTRPC, TRPCError } from "@trpc/server";
-import { type FetchCreateContextFnOptions } from "@trpc/server/adapters/fetch";
+import { type NextRequest } from "next/server";
 import superjson from "superjson";
 import { ZodError } from "zod";
 
@@ -23,8 +23,7 @@ import { db } from "@/server/db";
  *
  * @see https://trpc.io/docs/server/context
  */
-export const createTRPCContext = (opts: FetchCreateContextFnOptions) => {
-  const { req } = opts;
+export const createTRPCContext = (req: NextRequest) => {
   return {
     auth: getAuth(req),
     db,
@@ -104,8 +103,13 @@ export const protectedProcedure = t.procedure.use(enforceUserIsAuthed);
  * Middleware for checking if a user has the 'ADMINISTRATOR' role.
  * Clerk stores custom claims in public/private metadata. We'll use publicMetadata.
  */
+import { type Role } from "@prisma/client";
+
 const enforceUserIsAdmin = t.middleware(({ ctx, next }) => {
-  if (ctx.auth.sessionClaims?.metadata?.role !== "ADMINISTRATOR") {
+  if (
+    (ctx.auth.sessionClaims?.publicMetadata as { role?: Role })?.role !==
+    "ADMINISTRATOR"
+  ) {
     throw new TRPCError({ code: "FORBIDDEN" });
   }
 

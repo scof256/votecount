@@ -1,5 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+import { type Role } from "@prisma/client";
 
 import {
   adminProcedure,
@@ -23,7 +24,7 @@ export const voteSubmissionRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const { session } = ctx;
+      const { auth } = ctx;
       const {
         pollingStationId,
         positionId,
@@ -32,7 +33,10 @@ export const voteSubmissionRouter = createTRPCRouter({
       } = input;
 
       // Ensure the user is a polling agent
-      if (session.user.role !== "POLLING_AGENT") {
+      if (
+        (auth.sessionClaims?.publicMetadata as { role?: Role })?.role !==
+        "POLLING_AGENT"
+      ) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message: "Only polling agents can submit vote counts.",
@@ -45,7 +49,7 @@ export const voteSubmissionRouter = createTRPCRouter({
           data: {
             pollingStationId,
             positionId,
-            submittedById: session.user.id,
+            submittedById: auth.userId,
             status: "PENDING",
             votes: {
               createMany: {
