@@ -1,8 +1,16 @@
 import { z } from "zod";
 
-import { adminProcedure, createTRPCRouter } from "@/server/api/trpc";
+import {
+  adminProcedure,
+  createTRPCRouter,
+  publicProcedure,
+} from "@/server/api/trpc";
 
 export const candidateRouter = createTRPCRouter({
+  getAll: publicProcedure.query(({ ctx }) => {
+    return ctx.db.candidate.findMany();
+  }),
+
   create: adminProcedure
     .input(
       z.object({

@@ -1,45 +1,40 @@
-import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { type Role } from "@prisma/client";
+import { SubmissionStatus } from "@prisma/client";
+import { TRPCError } from "@trpc/server";
 
 import {
-  adminProcedure,
   createTRPCRouter,
-  protectedProcedure,
+  pollingAgentProcedure,
+  publicProcedure,
+  supervisorAndAdminProcedure,
 } from "@/server/api/trpc";
 
 export const voteSubmissionRouter = createTRPCRouter({
-  submit: protectedProcedure
+  submit: pollingAgentProcedure
     .input(
       z.object({
-        pollingStationId: z.string(),
         positionId: z.string(),
         votes: z.array(
           z.object({
             candidateId: z.string(),
             voteCount: z.number().int().min(0),
-          })
+          }),
         ).min(1),
         declarationFormImageUrls: z.array(z.string().url()).optional(),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
-      const { auth } = ctx;
-      const {
-        pollingStationId,
-        positionId,
-        votes,
-        declarationFormImageUrls,
-      } = input;
+      const { positionId, votes, declarationFormImageUrls } = input;
 
-      // Ensure the user is a polling agent
-      if (
-        (auth.sessionClaims?.publicMetadata as { role?: Role })?.role !==
-        "POLLING_AGENT"
-      ) {
+      const user = await ctx.db.user.findUnique({
+        where: { id: ctx.auth.userId },
+        select: { assignedPollingStationId: true },
+      });
+
+      if (!user?.assignedPollingStationId) {
         throw new TRPCError({
           code: "FORBIDDEN",
-          message: "Only polling agents can submit vote counts.",
+          message: "You are not assigned to a polling station.",
         });
       }
 
@@ -47,9 +42,9 @@ export const voteSubmissionRouter = createTRPCRouter({
       return ctx.db.$transaction(async (prisma) => {
         const submission = await prisma.voteSubmission.create({
           data: {
-            pollingStationId,
+            pollingStationId: user.assignedPollingStationId,
             positionId,
-            submittedById: auth.userId,
+            submittedById: ctx.auth.userId,
             status: "PENDING",
             votes: {
               createMany: {
@@ -74,7 +69,18 @@ export const voteSubmissionRouter = createTRPCRouter({
       });
     }),
 
-  getAll: adminProcedure.query(({ ctx }) => {
+  getMySubmissions: pollingAgentProcedure.query(({ ctx }) => {
+    return ctx.db.voteSubmission.findMany({
+      where: { submittedById: ctx.auth.userId },
+      orderBy: { createdAt: "desc" },
+      include: {
+        pollingStation: true,
+        position: true,
+      },
+    });
+  }),
+
+  getAll: supervisorAndAdminProcedure.query(({ ctx }) => {
     return ctx.db.voteSubmission.findMany({
       orderBy: { createdAt: "desc" },
       include: {
@@ -89,7 +95,7 @@ export const voteSubmissionRouter = createTRPCRouter({
     });
   }),
 
-  getById: adminProcedure
+  getById: supervisorAndAdminProcedure
     .input(z.object({ id: z.string() }))
     .query(({ ctx, input }) => {
       return ctx.db.voteSubmission.findUnique({
@@ -107,4 +113,39 @@ export const voteSubmissionRouter = createTRPCRouter({
         },
       });
     }),
+
+  updateStatus: supervisorAndAdminProcedure
+    .input(
+      z.object({
+        id: z.string(),
+        status: z.nativeEnum(SubmissionStatus),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      return ctx.db.voteSubmission.update({
+        where: { id: input.id },
+        data: {
+          status: input.status,
+        },
+      });
+    }),
+
+  getResults: publicProcedure.query(({ ctx }) => {
+    return ctx.db.candidateVote.groupBy({
+      by: ["candidateId"],
+      where: {
+        submission: {
+          status: "VERIFIED",
+        },
+      },
+      _sum: {
+        voteCount: true,
+      },
+      orderBy: {
+        _sum: {
+          voteCount: "desc",
+        },
+      },
+    });
+  }),
 });

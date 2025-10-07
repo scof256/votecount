@@ -99,35 +99,60 @@ const enforceUserIsAuthed = t.middleware(({ ctx, next }) => {
  */
 export const protectedProcedure = t.procedure.use(enforceUserIsAuthed);
 
-/**
- * Middleware for checking if a user has the 'ADMINISTRATOR' role.
- * Clerk stores custom claims in public/private metadata. We'll use publicMetadata.
- */
 import { type Role } from "@prisma/client";
 
-const enforceUserIsAdmin = t.middleware(({ ctx, next }) => {
-  if (
-    (ctx.auth.sessionClaims?.publicMetadata as { role?: Role })?.role !==
-    "ADMINISTRATOR"
-  ) {
-    throw new TRPCError({ code: "FORBIDDEN" });
-  }
+/**
+ * Middleware factory for checking user roles.
+ * This middleware ensures that the user is authenticated and has one of the specified roles.
+ * @param allowedRoles - A single role or an array of roles that are allowed to access the procedure.
+ */
+const enforceRole = (allowedRoles: Role | Role[]) => {
+  const roles = Array.isArray(allowedRoles) ? allowedRoles : [allowedRoles];
 
-  return next({
-    ctx: {
-      auth: ctx.auth,
-    },
+  return t.middleware(({ ctx, next }) => {
+    // The `enforceUserIsAuthed` middleware, which is part of `protectedProcedure`,
+    // has already run at this point, so `ctx.auth.userId` is guaranteed to be present.
+
+    const userRole = ctx.auth.sessionClaims?.publicMetadata.role as
+      | Role
+      | undefined;
+
+    if (!userRole || !roles.includes(userRole)) {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: `This action requires one of the following roles: ${roles.join(
+          ", ",
+        )}`,
+      });
+    }
+
+    return next({
+      ctx: {
+        auth: ctx.auth,
+      },
+    });
   });
-});
+};
 
 /**
- * Protected procedure for administrators
+ * Role-specific procedures
  *
- * If you want a query or mutation to ONLY be accessible to administrators, use this. It verifies
- * the session is valid and that the user has the 'ADMINISTRATOR' role.
+ * These procedures enforce that the user is logged in and has the required role.
  *
  * @see https://trpc.io/docs/procedures
  */
-export const adminProcedure = t.procedure
-  .use(enforceUserIsAuthed)
-  .use(enforceUserIsAdmin);
+export const adminProcedure = protectedProcedure.use(enforceRole("ADMINISTRATOR"));
+export const supervisorProcedure = protectedProcedure.use(
+  enforceRole("SUPERVISOR"),
+);
+export const pollingAgentProcedure = protectedProcedure.use(
+  enforceRole("POLLING_AGENT"),
+);
+
+/**
+ * A procedure that can be accessed by multiple roles.
+ * For example, both Supervisors and Administrators might need to access certain resources.
+ */
+export const supervisorAndAdminProcedure = protectedProcedure.use(
+  enforceRole(["SUPERVISOR", "ADMINISTRATOR"]),
+);

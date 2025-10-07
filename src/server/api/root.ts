@@ -3,6 +3,7 @@ import { electionRouter } from "@/server/api/routers/election";
 import { pollingStationRouter } from "@/server/api/routers/pollingStation";
 import { postRouter } from "@/server/api/routers/post";
 import { voteSubmissionRouter } from "@/server/api/routers/voteSubmission";
+import { userRouter } from "@/server/api/routers/user";
 import { createTRPCRouter } from "@/server/api/trpc";
 
 /**
@@ -16,6 +17,7 @@ export const appRouter = createTRPCRouter({
   election: electionRouter,
   candidate: candidateRouter,
   voteSubmission: voteSubmissionRouter,
+  user: userRouter,
 });
 
 // export type definition of API

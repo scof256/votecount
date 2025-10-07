@@ -41,3 +41,8 @@ next-env.d.ts
 
 # jules
 jules-scratch/
+# clerk configuration (can include secrets)
+/.clerk/
+
+# database files
+*.db

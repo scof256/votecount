@@ -12,6 +12,8 @@ export const metadata: Metadata = {
   description: "A secure and transparent vote tallying application.",
 };
 
+import { Header } from "@/components/Header";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -21,7 +23,10 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en">
         <body className={inter.className}>
-          <TRPCReactProvider>{children}</TRPCReactProvider>
+          <TRPCReactProvider>
+            <Header />
+            {children}
+          </TRPCReactProvider>
         </body>
       </html>
     </ClerkProvider>
