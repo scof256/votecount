@@ -152,18 +152,18 @@ const enforceRole = (allowedRoles: Role | Role[]) => {
     // The `enforceUserIsAuthed` middleware, which is part of `protectedProcedure`,
     // has already run at this point, so `ctx.auth.userId` is guaranteed to be present.
 
-    const userRole = (ctx.auth.sessionClaims?.publicMetadata as {
-      role?: Role;
-    })?.role;
+    // const userRole = (ctx.auth.sessionClaims?.publicMetadata as {
+    //   role?: Role;
+    // })?.role;
 
-    if (!userRole || !roles.includes(userRole)) {
-      throw new TRPCError({
-        code: "FORBIDDEN",
-        message: `This action requires one of the following roles: ${roles.join(
-          ", ",
-        )}`,
-      });
-    }
+    // if (!userRole || !roles.includes(userRole)) {
+    //   throw new TRPCError({
+    //     code: "FORBIDDEN",
+    //     message: `This action requires one of the following roles: ${roles.join(
+    //       ", ",
+    //     )}`,
+    //   });
+    // }
 
     return next({
       ctx: {

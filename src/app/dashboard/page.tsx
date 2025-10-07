@@ -5,68 +5,7 @@ import Link from "next/link";
 import * as React from "react";
 
 import { api } from "@/trpc/react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from "recharts";
-
-export const dynamic = "force-dynamic";
-
-function AnalyticsDashboard() {
-  // This will be a new endpoint we need to create
-  const { data: results, isLoading } = api.voteSubmission.getResults.useQuery();
-
-  if (isLoading) {
-    return <p>Loading analytics data...</p>;
-  }
-
-  if (!results || results.length === 0) {
-    return <p>No verified results available to display.</p>;
-  }
-
-  const chartData = results.map((r: any) => ({
-    name: r.candidate.name,
-    votes: r._sum.voteCount,
-  }));
-
-  return (
-    <div className="grid grid-cols-1 gap-8">
-      <Card>
-        <CardHeader>
-          <CardTitle>Overall Election Results</CardTitle>
-          <CardDescription>
-            Live vote counts for each candidate across all verified polling stations.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={400}>
-            <BarChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="votes" fill="#8884d8" />
-            </BarChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
+import { Dashboard } from "./Dashboard";
 
 export default function DashboardPage() {
   const { user, isLoaded } = useUser();
@@ -105,7 +44,7 @@ export default function DashboardPage() {
         </div>
 
         <div className="mt-8">
-          <AnalyticsDashboard />
+          <Dashboard />
         </div>
       </section>
     </main>
