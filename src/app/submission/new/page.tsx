@@ -4,13 +4,15 @@ import { useUser } from "@clerk/nextjs";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import * as React from "react";
-import { type z } from "zod";
+import { type inferProcedureInput } from "@trpc/server";
 
 import { api } from "@/trpc/react";
 import { type AppRouter } from "@/server/api/root";
 
-type VoteSubmissionInput = z.infer<
-  AppRouter["voteSubmission"]["submit"]["_def"]["_input_"]
+export const dynamic = "force-dynamic";
+
+type VoteSubmissionInput = inferProcedureInput<
+  AppRouter["voteSubmission"]["submit"]
 >;
 
 function VoteSubmissionForm() {

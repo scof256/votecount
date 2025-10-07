@@ -59,7 +59,7 @@ export const aiRouter = createTRPCRouter({
         ocrVotes.some((v) => v.candidateId === null); // Flag if any candidate name didn't match
 
       // Save the analysis result to the database
-      const savedResult = await ctx.db.aiResult.upsert({
+      const savedResult = await ctx.db.aIResult.upsert({
         where: { submissionId: submission.id },
         create: {
           submissionId: submission.id,

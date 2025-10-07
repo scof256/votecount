@@ -23,6 +23,8 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
+export const dynamic = "force-dynamic";
+
 function AnalyticsDashboard() {
   // This will be a new endpoint we need to create
   const { data: results, isLoading } = api.voteSubmission.getResults.useQuery();

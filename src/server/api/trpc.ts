@@ -52,7 +52,7 @@ export const createTRPCContext = (req: NextRequest) => {
               data: {
                 userId: userId,
                 action: `${operation}:${model}`,
-                details: args, // Log the arguments of the operation
+                details: JSON.stringify(args), // Log the arguments of the operation
               },
             }),
             query(args),
@@ -152,9 +152,9 @@ const enforceRole = (allowedRoles: Role | Role[]) => {
     // The `enforceUserIsAuthed` middleware, which is part of `protectedProcedure`,
     // has already run at this point, so `ctx.auth.userId` is guaranteed to be present.
 
-    const userRole = ctx.auth.sessionClaims?.publicMetadata.role as
-      | Role
-      | undefined;
+    const userRole = (ctx.auth.sessionClaims?.publicMetadata as {
+      role?: Role;
+    })?.role;
 
     if (!userRole || !roles.includes(userRole)) {
       throw new TRPCError({

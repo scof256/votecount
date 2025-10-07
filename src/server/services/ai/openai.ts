@@ -1,13 +1,6 @@
 import OpenAI from "openai";
 import { z } from "zod";
 
-// Initialize the OpenAI client from environment variables
-// The user will need to set OPENAI_API_KEY and OPENAI_API_BASE_URL in their .env file
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-  baseURL: process.env.OPENAI_API_BASE_URL,
-});
-
 // Define the expected JSON structure from the AI's response using Zod
 const AIResponseSchema = z.object({
   votes: z.array(
@@ -34,6 +27,13 @@ export async function analyzeDeclarationForm(
   if (!process.env.OPENAI_API_KEY) {
     throw new Error("OPENAI_API_KEY environment variable is not set.");
   }
+
+  // Initialize the OpenAI client here to avoid build errors
+  // when the environment variable is not set.
+  const openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+    baseURL: process.env.OPENAI_API_BASE_URL,
+  });
 
   try {
     const response = await openai.chat.completions.create({

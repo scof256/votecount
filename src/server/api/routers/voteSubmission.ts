@@ -27,7 +27,7 @@ export const voteSubmissionRouter = createTRPCRouter({
       const { positionId, votes, declarationFormImageUrls } = input;
 
       const user = await ctx.db.user.findUnique({
-        where: { id: ctx.auth.userId },
+        where: { id: ctx.auth.userId! },
         select: { assignedPollingStationId: true },
       });
 
@@ -42,9 +42,9 @@ export const voteSubmissionRouter = createTRPCRouter({
       return ctx.db.$transaction(async (prisma) => {
         const submission = await prisma.voteSubmission.create({
           data: {
-            pollingStationId: user.assignedPollingStationId,
+            pollingStationId: user.assignedPollingStationId!,
             positionId,
-            submittedById: ctx.auth.userId,
+            submittedById: ctx.auth.userId!,
             status: "PENDING",
             votes: {
               createMany: {
@@ -71,7 +71,7 @@ export const voteSubmissionRouter = createTRPCRouter({
 
   getMySubmissions: pollingAgentProcedure.query(({ ctx }) => {
     return ctx.db.voteSubmission.findMany({
-      where: { submittedById: ctx.auth.userId },
+      where: { submittedById: ctx.auth.userId! },
       orderBy: { createdAt: "desc" },
       include: {
         pollingStation: true,

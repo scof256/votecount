@@ -6,6 +6,8 @@ import * as React from "react";
 
 import { ElectionManager } from "@/components/admin/ElectionManager";
 
+export const dynamic = "force-dynamic";
+
 export default function AdminDashboardPage() {
   const { user } = useUser();
 
