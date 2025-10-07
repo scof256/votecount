@@ -22,7 +22,8 @@
     "next-auth": "^4.24.11",
     "react": "^18",
     "react-dom": "^18",
-    "superjson": "^2.2.2"
+    "superjson": "^2.2.2",
+    "zod": "^4.1.12"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.9.1",

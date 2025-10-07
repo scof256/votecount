@@ -112,9 +112,14 @@ export const protectedProcedure = t.procedure.use(enforceUserIsAuthed);
  * Middleware for checking if a user has the 'ADMINISTRATOR' role.
  */
 const enforceUserIsAdmin = t.middleware(({ ctx, next }) => {
+  if (!ctx.session?.user) {
+    throw new TRPCError({ code: "UNAUTHORIZED" });
+  }
+
   if (ctx.session.user.role !== "ADMINISTRATOR") {
     throw new TRPCError({ code: "FORBIDDEN" });
   }
+
   return next({
     ctx: {
       session: { ...ctx.session, user: ctx.session.user },
