@@ -1,0 +1,22 @@
+import { candidateRouter } from "@/server/api/routers/candidate";
+import { electionRouter } from "@/server/api/routers/election";
+import { pollingStationRouter } from "@/server/api/routers/pollingStation";
+import { postRouter } from "@/server/api/routers/post";
+import { voteSubmissionRouter } from "@/server/api/routers/voteSubmission";
+import { createTRPCRouter } from "@/server/api/trpc";
+
+/**
+ * This is the primary router for your server.
+ *
+ * All routers added in /api/routers should be manually added here.
+ */
+export const appRouter = createTRPCRouter({
+  post: postRouter,
+  pollingStation: pollingStationRouter,
+  election: electionRouter,
+  candidate: candidateRouter,
+  voteSubmission: voteSubmissionRouter,
+});
+
+// export type definition of API
+export type AppRouter = typeof appRouter;
