@@ -2,10 +2,10 @@ import { candidateRouter } from "@/server/api/routers/candidate";
 import { electionRouter } from "@/server/api/routers/election";
 import { pollingStationRouter } from "@/server/api/routers/pollingStation";
 import { postRouter } from "@/server/api/routers/post";
+import { aiRouter } from "@/server/api/routers/ai";
 import { voteSubmissionRouter } from "@/server/api/routers/voteSubmission";
 import { userRouter } from "@/server/api/routers/user";
 import { createTRPCRouter } from "@/server/api/trpc";
-import { aiRouter } from "./routers/ai";
 
 /**
  * This is the primary router for your server.

@@ -18,7 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Button } from "@/components/ui/button"; // I'll create this button component next
+import { Button } from "@/components/ui/button";
 import { type SubmissionStatus } from "@prisma/client";
 import { type AppRouter } from "@/server/api/root";
 import { type inferProcedureOutput } from "@trpc/server";
