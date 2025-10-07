@@ -85,6 +85,7 @@ export const voteSubmissionRouter = createTRPCRouter({
       orderBy: { createdAt: "desc" },
       include: {
         pollingStation: true,
+        position: true, // Include the position details
         submittedBy: {
           select: {
             name: true,

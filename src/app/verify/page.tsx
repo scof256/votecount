@@ -44,6 +44,9 @@ function VerificationDashboard() {
               Polling Station
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+              Position
+            </th>
+            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
               Submitted By
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
@@ -62,6 +65,9 @@ function VerificationDashboard() {
             <tr key={s.id}>
               <td className="whitespace-nowrap px-6 py-4">
                 {s.pollingStation.name}
+              </td>
+              <td className="whitespace-nowrap px-6 py-4">
+                {s.position.title}
               </td>
               <td className="whitespace-nowrap px-6 py-4">
                 {s.submittedBy.name ?? s.submittedBy.email}
